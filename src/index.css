@@ -1406,11 +1406,11 @@ button, input, select, textarea {
 }
 
 /* TECH STACK SECTION */
-.landing-syllabus {
+.landing-stack {
   padding: 4rem 2rem 3rem 2rem;
 }
 
-.syllabus-box {
+.stack-overview-box {
   padding: 3.5rem;
   display: flex;
   align-items: center;
@@ -1420,7 +1420,7 @@ button, input, select, textarea {
   background: linear-gradient(135deg, rgba(22, 83, 85, 0.95) 0%, rgba(11, 35, 42, 0.95) 100%);
 }
 
-.syllabus-checklist {
+.stack-checklist {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 1rem;
@@ -1428,7 +1428,7 @@ button, input, select, textarea {
   color: var(--text-main);
 }
 
-.syllabus-checklist div {
+.stack-checklist div {
   display: flex;
   align-items: center;
   gap: 0.6rem;
@@ -1442,7 +1442,7 @@ button, input, select, textarea {
   .hero-subtitle { font-size: 3rem; }
   .running-text-wrapper { font-size: 3.8rem; }
   .hero-description { font-size: 1.15rem; }
-  .syllabus-box { flex-direction: column; text-align: center; padding: 2rem; }
+  .stack-overview-box { flex-direction: column; text-align: center; padding: 2rem; }
 }
 
 /* PROFESSIONAL SAAS FOOTER STYLES */

@@ -40,7 +40,7 @@ export const Landing = () => {
           <div className="sidebar-logo-icon">TT</div>
           <div>
             <span className="sidebar-brand-text">Team Titans</span>
-            <span className="landing-tagline-badge">Cyber Edition</span>
+            <span className="landing-tagline-badge">Cyber Workspace</span>
           </div>
         </div>
 
@@ -230,7 +230,7 @@ export const Landing = () => {
       </section>
 
       {/* 3. STACK SECTION */}
-      <section id="stack" className="landing-syllabus page-container">
+      <section id="stack" className="landing-stack page-container">
         <div className="scroll-slide-up" style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
           <div className="hero-badge pro-badge" style={{ marginBottom: '1rem' }}>
             <span className="pulse-dot" />
@@ -285,7 +285,7 @@ export const Landing = () => {
         </div>
 
         <div
-          className="glass-card syllabus-box scroll-flip-3d"
+          className="glass-card stack-overview-box scroll-flip-3d"
           onMouseMove={handle3DTiltMouseMove}
           onMouseLeave={handle3DTiltMouseLeave}
         >
@@ -297,7 +297,7 @@ export const Landing = () => {
               Engineered with zero heavy rich-text editor dependencies. Native browser contentEditable execution, 
               custom CSS3 Glassmorphism, JavaScript ES6+, React 19, Zustand, and LocalStorage.
             </p>
-            <div className="syllabus-checklist">
+            <div className="stack-checklist">
               <div><IconCheck size={18} style={{ color: 'var(--success)' }} /> React 19 Components & Custom Hooks</div>
               <div><IconCheck size={18} style={{ color: 'var(--success)' }} /> 3D Scroll & Mouse Tilt Physics Engine</div>
               <div><IconCheck size={18} style={{ color: 'var(--success)' }} /> Zustand Centralized State Store</div>
@@ -306,7 +306,7 @@ export const Landing = () => {
               <div><IconCheck size={18} style={{ color: 'var(--success)' }} /> Role Access Control (Editor/Viewer)</div>
             </div>
           </div>
-          <div className="syllabus-cta">
+          <div className="stack-cta">
             <Button variant="primary" style={{ padding: '1.1rem 2.2rem', fontSize: '1.05rem' }} onClick={() => navigate('/dashboard')}>
               Explore Workspace →
             </Button>
