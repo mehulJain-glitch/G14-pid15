@@ -85,8 +85,23 @@ export const Landing = () => {
 
         <p className="hero-description scroll-slide-up delay-1">
           A modern, ultra-responsive SaaS document workspace powered by <strong>React 19</strong>, 
-          <strong> Zustand</strong>, <strong>Cyber Teal & Sage Design System</strong>, and <strong>Real-Time Multi-Tab Storage Sync</strong>.
-          Experience interactive 3D document cards, multi-user role management, and revision history.
+          <strong> Zustand</strong>, <strong>Cyber Teal & Sage Design System</strong>, and <strong>Real-Time Multi-Tab Storage Sync</strong>.{' '}
+          <a
+            href="/dashboard"
+            onClick={(e) => { e.preventDefault(); navigate('/dashboard'); }}
+            style={{
+              color: 'var(--accent)',
+              fontWeight: 700,
+              textDecoration: 'underline',
+              cursor: 'pointer',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '0.3rem'
+            }}
+            title="Open Team Titans Project Workspace"
+          >
+            🔗 Open Project Workspace →
+          </a>
         </p>
 
         <div className="hero-cta-group scroll-slide-up delay-2">
