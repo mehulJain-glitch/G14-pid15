@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Sidebar } from '../components/Sidebar';
 import { Navbar } from '../components/Navbar';
 import { DocumentList } from '../components/DocumentList';
@@ -11,6 +11,7 @@ import { useScrollAnimation, handle3DTiltMouseMove, handle3DTiltMouseLeave } fro
 
 export const Dashboard = () => {
   const [sharingDoc, setSharingDoc] = useState(null);
+  const [dashboardFilter, setDashboardFilter] = useState('all');
 
   const user = useAppStore((state) => state.user);
   const documents = useAppStore((state) => state.documents);
@@ -30,10 +31,22 @@ export const Dashboard = () => {
   const sharedDocs = documents.filter((d) => d.owner?.email !== user?.email || (d.permissions && d.permissions.length > 1)).length;
   const starredDocs = documents.filter((d) => d.starred).length;
 
-  // Filtered documents based on search
-  const filteredDocuments = documents.filter((doc) =>
-    doc.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Filtered documents based on search and quick tabs
+  const filteredDocuments = useMemo(() => {
+    return documents.filter((doc) => {
+      const matchesSearch = doc.title.toLowerCase().includes(searchQuery.toLowerCase());
+      if (!matchesSearch) return false;
+
+      if (dashboardFilter === 'starred') return doc.starred;
+      if (dashboardFilter === 'shared') {
+        return doc.owner?.email !== user?.email || (doc.permissions && doc.permissions.length > 1);
+      }
+      if (dashboardFilter === 'owned') {
+        return doc.owner?.email === user?.email;
+      }
+      return true;
+    });
+  }, [documents, searchQuery, dashboardFilter, user]);
 
   return (
     <div className="app-layout">
@@ -115,9 +128,44 @@ export const Dashboard = () => {
             </div>
           </div>
 
+          {/* Quick Filter Tabs */}
+          <div style={{ display: 'flex', gap: '0.65rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+            {[
+              { id: 'all', label: '📂 All Documents' },
+              { id: 'starred', label: '⭐ Starred' },
+              { id: 'shared', label: '👥 Shared with Me' },
+              { id: 'owned', label: '👤 Owned by Me' }
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                className={`tab-btn animated-btn-press ${dashboardFilter === tab.id ? 'active' : ''}`}
+                style={{
+                  padding: '0.45rem 1.15rem',
+                  borderRadius: 'var(--radius-xl)',
+                  fontSize: '0.85rem',
+                  background: dashboardFilter === tab.id ? 'rgba(108, 99, 255, 0.25)' : 'rgba(25, 34, 52, 0.65)',
+                  border: dashboardFilter === tab.id ? '1px solid #6C63FF' : '1px solid var(--border-color)',
+                  color: dashboardFilter === tab.id ? '#2EC4B6' : 'var(--text-muted)',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  boxShadow: dashboardFilter === tab.id ? '0 0 15px rgba(108, 99, 255, 0.3)' : 'none',
+                  transition: 'all 0.2s ease'
+                }}
+                onClick={() => setDashboardFilter(tab.id)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+
           {/* Recent Documents Section */}
           <div className="scroll-slide-up" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Recent Documents</h2>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>
+              {dashboardFilter === 'starred' ? 'Starred Documents' :
+               dashboardFilter === 'shared' ? 'Shared Documents' :
+               dashboardFilter === 'owned' ? 'Owned Documents' : 'Recent Documents'}
+            </h2>
             <span style={{ fontSize: '0.85rem', color: 'var(--accent)', fontWeight: 600 }}>
               ● {filteredDocuments.length} Documents in PC Storage
             </span>
@@ -126,7 +174,7 @@ export const Dashboard = () => {
           <DocumentList
             documents={filteredDocuments}
             onShare={(doc) => setSharingDoc(doc)}
-            emptyTitle="No documents found"
+            emptyTitle={`No ${dashboardFilter !== 'all' ? dashboardFilter : ''} documents found`}
           />
         </div>
       </main>
