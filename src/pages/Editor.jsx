@@ -7,7 +7,8 @@ import {
   IconSave,
   IconDownload,
   IconCheck,
-  IconHardDrive
+  IconHardDrive,
+  IconSearch
 } from '../components/Icons';
 import { Button } from '../components/Button';
 import { EditorToolbar } from '../components/EditorToolbar';
@@ -17,6 +18,8 @@ import { ShareModal } from '../components/ShareModal';
 import { CommentsPanel } from '../components/CommentsPanel';
 import { VersionHistory } from '../components/VersionHistory';
 import { ToastContainer } from '../components/Toast';
+import { Modal } from '../components/Modal';
+import { CommandPalette } from '../components/CommandPalette';
 import { useAppStore } from '../store/appStore';
 import { documentService } from '../services/documentService';
 import { storageService } from '../services/storage';
@@ -40,8 +43,14 @@ export const Editor = () => {
   const [isShareOpen, setIsShareOpen] = useState(false);
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
   const [showSaveSuccessAnim, setShowSaveSuccessAnim] = useState(false);
+  const [isZenMode, setIsZenMode] = useState(false);
+  const [isStatsOpen, setIsStatsOpen] = useState(false);
+  const [isCommandOpen, setIsCommandOpen] = useState(false);
+
+  // Analytics counts
   const [wordCount, setWordCount] = useState(0);
   const [charCount, setCharCount] = useState(0);
+  const [paragraphCount, setParagraphCount] = useState(0);
 
   const editorRef = useRef(null);
   const saveTimeoutRef = useRef(null);
@@ -58,17 +67,20 @@ export const Editor = () => {
     return () => window.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Calculate word and character count
+  // Calculate word, character, and paragraph count
   const calculateCounts = useCallback((htmlContent) => {
     if (!htmlContent) {
       setWordCount(0);
       setCharCount(0);
+      setParagraphCount(0);
       return;
     }
     const plainText = htmlContent.replace(/<[^>]*>?/gm, '').trim();
     setCharCount(plainText.length);
     const words = plainText ? plainText.split(/\s+/).filter(Boolean) : [];
     setWordCount(words.length);
+    const paragraphs = htmlContent.split(/<\/p>|<br\s*\/?>/i).filter((p) => p.replace(/<[^>]*>?/gm, '').trim().length > 0);
+    setParagraphCount(Math.max(1, paragraphs.length));
   }, []);
 
   // Sync document from store whenever id or store changes (supports Multi-Tab live sync!)
@@ -152,21 +164,37 @@ export const Editor = () => {
     setTimeout(() => setSaveStatus('Saved in PC Local Storage'), 500);
   };
 
-  // Keyboard shortcut Ctrl+S / Cmd+S for saving in PC Local Storage
+  // Keyboard shortcut listeners (Ctrl+S, Ctrl+K, Zen Mode)
   useEffect(() => {
     const handleKeyDown = (e) => {
+      // Ctrl+S / Cmd+S
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
         e.preventDefault();
         saveDocumentNow('shortcut');
       }
+      // Ctrl+K / Cmd+K
+      else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsCommandOpen((prev) => !prev);
+      }
+      // Escape exits Zen Mode
+      else if (e.key === 'Escape' && isZenMode) {
+        setIsZenMode(false);
+      }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [saveDocumentNow]);
+  }, [saveDocumentNow, isZenMode]);
 
   // Export / Save file to user's PC physical disk
   const handleSaveToPCFile = async (format) => {
     setIsExportMenuOpen(false);
+
+    if (format === 'pdf') {
+      window.print();
+      return;
+    }
+
     const currentContent = editorRef.current?.getContent() ?? (document?.content || '');
     const activeDoc = {
       ...(document || {}),
@@ -175,7 +203,6 @@ export const Editor = () => {
       updatedAt: new Date().toISOString()
     };
 
-    // First ensure latest version is saved in PC LocalStorage
     saveDocumentNow('manual');
 
     try {
@@ -188,6 +215,8 @@ export const Editor = () => {
       addToast('Failed to save file to PC', 'danger');
     }
   };
+
+  const readingTime = Math.max(1, Math.ceil(wordCount / 200));
 
   if (!document) {
     return (
@@ -204,7 +233,7 @@ export const Editor = () => {
   }
 
   return (
-    <div className="editor-container">
+    <div className={`editor-container ${isZenMode ? 'zen-mode-active' : ''}`}>
       {/* FLOATING POPUP ANIMATION ON SAVE */}
       {showSaveSuccessAnim && (
         <div className="save-floating-banner animated-slide-down">
@@ -214,155 +243,206 @@ export const Editor = () => {
         </div>
       )}
 
+      {/* ZEN MODE EXIT BUTTON */}
+      {isZenMode && (
+        <button
+          type="button"
+          className="zen-mode-exit-btn animated-fade-in"
+          onClick={() => setIsZenMode(false)}
+          title="Exit Zen Mode (Press ESC)"
+        >
+          <span>✕ Exit Focus Mode</span>
+          <kbd>ESC</kbd>
+        </button>
+      )}
+
       {/* TOP HEADER */}
-      <header className="editor-header">
-        <div className="editor-header-left">
-          <Button variant="icon" onClick={() => navigate('/dashboard')} title="Back to Dashboard">
-            <IconArrowLeft size={20} />
-          </Button>
-
-          <input
-            type="text"
-            className="editor-title-input"
-            value={title}
-            onChange={handleTitleChange}
-            disabled={!canEdit}
-            placeholder="Document Title"
-          />
-
-          <Button
-            variant="icon"
-            onClick={() => toggleStar(document.id)}
-            title={document.starred ? 'Unstar' : 'Star'}
-          >
-            <IconStar size={18} filled={document.starred} />
-          </Button>
-
-          {/* Interactive Save Status Badge */}
-          <div
-            className={`save-status-indicator interactive-save-pill ${saveStatus.includes('Saving') ? 'is-saving' : 'is-saved'}`}
-            onClick={() => saveDocumentNow('manual')}
-            title="Click to save immediately to PC Local Storage (Ctrl+S)"
-          >
-            <span className={`status-dot ${saveStatus.includes('Saving') ? 'saving' : ''}`} />
-            <span>{saveStatus}</span>
-          </div>
-
-          {!canEdit && (
-            <span className={`badge badge-${userRole.toLowerCase()}`} style={{ marginLeft: '0.5rem' }}>
-              {userRole === 'Viewer' ? '👁️ Viewing Only' : '💬 Commenting Only'}
-            </span>
-          )}
-        </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-          <Collaborators permissions={document.permissions} />
-
-          {/* SAVE TO PC BUTTON & DROPDOWN */}
-          <div className="export-menu-container" ref={exportDropdownRef} style={{ position: 'relative' }}>
-            <Button
-              variant="secondary"
-              icon={<IconSave size={16} />}
-              onClick={() => setIsExportMenuOpen((prev) => !prev)}
-              className="save-pc-btn animated-hover-pulse"
-              title="Save to PC Local Storage or Download file"
-            >
-              <span>Save to PC</span>
-              <span style={{ fontSize: '0.7rem', opacity: 0.7, marginLeft: '0.2rem' }}>▼</span>
+      {!isZenMode && (
+        <header className="editor-header">
+          <div className="editor-header-left">
+            <Button variant="icon" onClick={() => navigate('/dashboard')} title="Back to Dashboard">
+              <IconArrowLeft size={20} />
             </Button>
 
-            {isExportMenuOpen && (
-              <div className="export-dropdown-menu animated-pop-in">
-                <div className="dropdown-header">
-                  <IconHardDrive size={16} style={{ color: 'var(--accent)' }} />
-                  <span>PC Storage & Export</span>
-                </div>
+            <input
+              type="text"
+              className="editor-title-input"
+              value={title}
+              onChange={handleTitleChange}
+              disabled={!canEdit}
+              placeholder="Document Title"
+            />
 
-                <button
-                  type="button"
-                  className="dropdown-item highlighted-item"
-                  onClick={() => {
-                    saveDocumentNow('manual');
-                    setIsExportMenuOpen(false);
-                  }}
-                >
-                  <IconSave size={16} style={{ color: 'var(--success)' }} />
-                  <div>
-                    <strong>Save to PC Local Storage</strong>
-                    <div className="dropdown-subtext">Instant browser disk persistence (Ctrl+S)</div>
-                  </div>
-                </button>
+            <Button
+              variant="icon"
+              onClick={() => toggleStar(document.id)}
+              title={document.starred ? 'Unstar' : 'Star'}
+            >
+              <IconStar size={18} filled={document.starred} />
+            </Button>
 
-                <div className="dropdown-divider" />
+            {/* Interactive Save Status Badge */}
+            <div
+              className={`save-status-indicator interactive-save-pill ${saveStatus.includes('Saving') ? 'is-saving' : 'is-saved'}`}
+              onClick={() => saveDocumentNow('manual')}
+              title="Click to save immediately to PC Local Storage (Ctrl+S)"
+            >
+              <span className={`status-dot ${saveStatus.includes('Saving') ? 'saving' : ''}`} />
+              <span>{saveStatus}</span>
+            </div>
 
-                <button
-                  type="button"
-                  className="dropdown-item"
-                  onClick={() => handleSaveToPCFile('html')}
-                >
-                  <IconDownload size={16} />
-                  <div>
-                    <strong>Download as HTML (.html)</strong>
-                    <div className="dropdown-subtext">Formatted document for any browser or Word</div>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  className="dropdown-item"
-                  onClick={() => handleSaveToPCFile('txt')}
-                >
-                  <IconDownload size={16} />
-                  <div>
-                    <strong>Download as Plain Text (.txt)</strong>
-                    <div className="dropdown-subtext">Clean text without tags</div>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  className="dropdown-item"
-                  onClick={() => handleSaveToPCFile('md')}
-                >
-                  <IconDownload size={16} />
-                  <div>
-                    <strong>Download as Markdown (.md)</strong>
-                    <div className="dropdown-subtext">Formatted markdown file</div>
-                  </div>
-                </button>
-
-                <button
-                  type="button"
-                  className="dropdown-item"
-                  onClick={() => handleSaveToPCFile('json')}
-                >
-                  <IconDownload size={16} />
-                  <div>
-                    <strong>Backup as JSON (.json)</strong>
-                    <div className="dropdown-subtext">Includes versions, comments, and permissions</div>
-                  </div>
-                </button>
-              </div>
+            {!canEdit && (
+              <span className={`badge badge-${userRole.toLowerCase()}`} style={{ marginLeft: '0.5rem' }}>
+                {userRole === 'Viewer' ? '👁️ Viewing Only' : '💬 Commenting Only'}
+              </span>
             )}
           </div>
 
-          <Button
-            variant="primary"
-            icon={<IconShare size={16} />}
-            onClick={() => setIsShareOpen(true)}
-            className="share-btn animated-hover-glow"
-          >
-            Share
-          </Button>
-        </div>
-      </header>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            {/* Quick Command Palette Button */}
+            <button
+              type="button"
+              className="command-trigger-btn animated-btn-press"
+              onClick={() => setIsCommandOpen(true)}
+              title="Open Command Palette (Ctrl+K)"
+            >
+              <IconSearch size={15} style={{ color: 'var(--accent)' }} />
+              <span>Commands</span>
+              <kbd>⌘K</kbd>
+            </button>
+
+            {/* Zen Focus Mode Button */}
+            <button
+              type="button"
+              className="zen-mode-trigger-btn animated-btn-press"
+              onClick={() => setIsZenMode(true)}
+              title="Enter Distraction-Free Focus Mode"
+            >
+              🧘 Focus
+            </button>
+
+            <Collaborators permissions={document.permissions} />
+
+            {/* SAVE TO PC BUTTON & DROPDOWN */}
+            <div className="export-menu-container" ref={exportDropdownRef} style={{ position: 'relative' }}>
+              <Button
+                variant="secondary"
+                icon={<IconSave size={16} />}
+                onClick={() => setIsExportMenuOpen((prev) => !prev)}
+                className="save-pc-btn animated-hover-pulse"
+                title="Save to PC Local Storage or Download file"
+              >
+                <span>Save to PC</span>
+                <span style={{ fontSize: '0.7rem', opacity: 0.7, marginLeft: '0.2rem' }}>▼</span>
+              </Button>
+
+              {isExportMenuOpen && (
+                <div className="export-dropdown-menu animated-pop-in">
+                  <div className="dropdown-header">
+                    <IconHardDrive size={16} style={{ color: 'var(--accent)' }} />
+                    <span>PC Storage & Export</span>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="dropdown-item highlighted-item"
+                    onClick={() => {
+                      saveDocumentNow('manual');
+                      setIsExportMenuOpen(false);
+                    }}
+                  >
+                    <IconSave size={16} style={{ color: 'var(--success)' }} />
+                    <div>
+                      <strong>Save to PC Local Storage</strong>
+                      <div className="dropdown-subtext">Instant browser disk persistence (Ctrl+S)</div>
+                    </div>
+                  </button>
+
+                  <div className="dropdown-divider" />
+
+                  <button
+                    type="button"
+                    className="dropdown-item"
+                    onClick={() => handleSaveToPCFile('html')}
+                  >
+                    <IconDownload size={16} />
+                    <div>
+                      <strong>Download as HTML (.html)</strong>
+                      <div className="dropdown-subtext">Formatted document for any browser or Word</div>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="dropdown-item"
+                    onClick={() => handleSaveToPCFile('pdf')}
+                  >
+                    <IconDownload size={16} />
+                    <div>
+                      <strong>Print / Save as PDF (.pdf)</strong>
+                      <div className="dropdown-subtext">Clean print-ready PDF layout</div>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="dropdown-item"
+                    onClick={() => handleSaveToPCFile('txt')}
+                  >
+                    <IconDownload size={16} />
+                    <div>
+                      <strong>Download as Plain Text (.txt)</strong>
+                      <div className="dropdown-subtext">Clean text without tags</div>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="dropdown-item"
+                    onClick={() => handleSaveToPCFile('md')}
+                  >
+                    <IconDownload size={16} />
+                    <div>
+                      <strong>Download as Markdown (.md)</strong>
+                      <div className="dropdown-subtext">Formatted markdown file</div>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="dropdown-item"
+                    onClick={() => handleSaveToPCFile('json')}
+                  >
+                    <IconDownload size={16} />
+                    <div>
+                      <strong>Backup as JSON (.json)</strong>
+                      <div className="dropdown-subtext">Includes versions, comments, and permissions</div>
+                    </div>
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <Button
+              variant="primary"
+              icon={<IconShare size={16} />}
+              onClick={() => setIsShareOpen(true)}
+              className="share-btn animated-hover-glow"
+            >
+              Share
+            </Button>
+          </div>
+        </header>
+      )}
 
       {/* FORMATTING TOOLBAR */}
-      <EditorToolbar
-        disabled={!canEdit}
-        onCommand={(command, value) => editorRef.current?.applyCommand(command, value)}
-        onSaveSelection={() => editorRef.current?.saveSelection()}
-      />
+      {!isZenMode && (
+        <EditorToolbar
+          disabled={!canEdit}
+          onCommand={(command, value) => editorRef.current?.applyCommand(command, value)}
+          onSaveSelection={() => editorRef.current?.saveSelection()}
+        />
+      )}
 
       {/* EDITOR BODY */}
       <div className="editor-body">
@@ -375,38 +455,48 @@ export const Editor = () => {
         />
 
         {/* RIGHT SIDEBAR (Comments & Version History) */}
-        <aside className="editor-sidebar animated-sidebar">
-          <div className="sidebar-tabs">
-            <button
-              className={`tab-btn animated-tab ${activeTab === 'comments' ? 'active' : ''}`}
-              onClick={() => setActiveTab('comments')}
-            >
-              Comments
-            </button>
-            <button
-              className={`tab-btn animated-tab ${activeTab === 'history' ? 'active' : ''}`}
-              onClick={() => setActiveTab('history')}
-            >
-              Version History
-            </button>
-          </div>
+        {!isZenMode && (
+          <aside className="editor-sidebar animated-sidebar">
+            <div className="sidebar-tabs">
+              <button
+                className={`tab-btn animated-tab ${activeTab === 'comments' ? 'active' : ''}`}
+                onClick={() => setActiveTab('comments')}
+              >
+                Comments
+              </button>
+              <button
+                className={`tab-btn animated-tab ${activeTab === 'history' ? 'active' : ''}`}
+                onClick={() => setActiveTab('history')}
+              >
+                Version History
+              </button>
+            </div>
 
-          <div className="sidebar-tab-content">
-            {activeTab === 'comments' ? (
-              <CommentsPanel document={document} readOnly={!canComment} />
-            ) : (
-              <VersionHistory document={document} />
-            )}
-          </div>
-        </aside>
+            <div className="sidebar-tab-content">
+              {activeTab === 'comments' ? (
+                <CommentsPanel document={document} readOnly={!canComment} />
+              ) : (
+                <VersionHistory document={document} />
+              )}
+            </div>
+          </aside>
+        )}
       </div>
 
       {/* BOTTOM STATUS BAR */}
       <footer className="editor-statusbar">
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
-          <span>Words: {wordCount}</span>
-          <span style={{ opacity: 0.4 }}>|</span>
-          <span>Characters: {charCount}</span>
+          <span
+            style={{ cursor: 'pointer', display: 'inline-flex', alignItems: 'center', gap: '0.4rem' }}
+            onClick={() => setIsStatsOpen(true)}
+            title="Click to view full Document Analytics"
+          >
+            <span>Words: {wordCount}</span>
+            <span style={{ opacity: 0.4 }}>|</span>
+            <span>Characters: {charCount}</span>
+            <span style={{ opacity: 0.4 }}>|</span>
+            <span style={{ color: 'var(--accent)' }}>⏱️ {readingTime} min read</span>
+          </span>
           <span style={{ opacity: 0.4 }}>|</span>
           <span>Mode: {userRole}</span>
           <span style={{ opacity: 0.4 }}>|</span>
@@ -423,6 +513,36 @@ export const Editor = () => {
           <span style={{ color: 'var(--text-dim)' }}>{saveStatus}</span>
         </div>
       </footer>
+
+      {/* DOCUMENT ANALYTICS MODAL */}
+      <Modal isOpen={isStatsOpen} onClose={() => setIsStatsOpen(false)} title="📊 Document Analytics">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', marginTop: '0.5rem' }}>
+          <div className="glass-card" style={{ padding: '1rem', textAlign: 'center' }}>
+            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#6C63FF' }}>{wordCount}</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Total Words</div>
+          </div>
+          <div className="glass-card" style={{ padding: '1rem', textAlign: 'center' }}>
+            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#2EC4B6' }}>{charCount}</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Total Characters</div>
+          </div>
+          <div className="glass-card" style={{ padding: '1rem', textAlign: 'center' }}>
+            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#F8FAFC' }}>{paragraphCount}</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Paragraphs</div>
+          </div>
+          <div className="glass-card" style={{ padding: '1rem', textAlign: 'center' }}>
+            <div style={{ fontSize: '1.8rem', fontWeight: 800, color: '#2EC4B6' }}>{readingTime} min</div>
+            <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Estimated Reading Time</div>
+          </div>
+        </div>
+        <div style={{ marginTop: '1.5rem', textAlign: 'right' }}>
+          <Button variant="primary" onClick={() => setIsStatsOpen(false)}>
+            Close
+          </Button>
+        </div>
+      </Modal>
+
+      {/* COMMAND PALETTE */}
+      <CommandPalette isOpen={isCommandOpen} onClose={() => setIsCommandOpen(false)} />
 
       {/* SHARE MODAL */}
       <ShareModal

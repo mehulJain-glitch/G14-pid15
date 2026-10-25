@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   IconFileText,
@@ -10,7 +10,8 @@ import {
   IconCompass,
   IconSave,
   IconDownload,
-  IconHardDrive
+  IconHardDrive,
+  IconX
 } from '../components/Icons';
 import { Button } from '../components/Button';
 import { Footer } from '../components/Footer';
@@ -24,8 +25,61 @@ export const Landing = () => {
   // Activate scroll-triggered 3D sliding, rolling, cascade & blur entrance animations
   useScrollAnimation();
 
+  // State for FAQ accordion
+  const [openFaq, setOpenFaq] = useState(0);
+
+  // State for back to top button visibility
+  const [showBackToTop, setShowBackToTop] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 400) {
+        setShowBackToTop(true);
+      } else {
+        setShowBackToTop(false);
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const faqs = [
+    {
+      q: 'Where are my documents saved?',
+      a: 'Your documents are saved directly into your PC\'s browser LocalStorage and are 100% accessible offline without any cloud account required. You can also export and download standalone files (.html, .txt, .md, .json) directly to your PC disk at any time!'
+    },
+    {
+      q: 'How does Ctrl+S work in Google Docs Lite?',
+      a: 'When you press Ctrl+S (or Cmd+S on Mac), our instant save hook intercepts the browser default dialog, flushes your live typing immediately into PC storage, logs an automatic version history snapshot, and displays an animated visual confirmation badge.'
+    },
+    {
+      q: 'Can I import existing files from my computer?',
+      a: 'Yes! Click "Import PC File" from the sidebar or command palette (Ctrl+K). You can import .html, .txt, .md, or JSON backups from your PC and start editing immediately.'
+    },
+    {
+      q: 'Does it support real-time collaboration across multiple tabs?',
+      a: 'Absolutely. We utilize browser Storage event listeners to synchronize document modifications across multiple open tabs in real-time with zero latency.'
+    }
+  ];
+
   return (
     <div className="landing-container">
+      {/* FLOATING BACK TO TOP BUTTON */}
+      {showBackToTop && (
+        <button
+          type="button"
+          className="floating-back-to-top animated-pop-in"
+          onClick={scrollToTop}
+          title="Scroll back to top"
+        >
+          ▲
+        </button>
+      )}
+
       {/* LANDING NAVIGATION */}
       <header className="landing-header">
         <div
@@ -44,7 +98,8 @@ export const Landing = () => {
         <nav className="landing-nav-links">
           <a href="#home">Home</a>
           <a href="#features">Features</a>
-          <a href="#metrics">Metrics</a>
+          <a href="#comparison">Compare</a>
+          <a href="#faq">FAQ</a>
           <a href="#stack">Tech Stack</a>
         </nav>
 
@@ -353,7 +408,99 @@ export const Landing = () => {
         </div>
       </section>
 
-      {/* 4. STACK SECTION */}
+      {/* 4. COMPARISON SECTION */}
+      <section id="comparison" className="landing-comparison page-container">
+        <div className="scroll-blur-in" style={{ textAlign: 'center', marginBottom: '3rem' }}>
+          <span className="sassy-pill">✦ WHY GOOGLE DOCS LITE?</span>
+          <h2 style={{ fontSize: '2.6rem', fontWeight: 800, marginTop: '0.8rem' }}>
+            The Modern Standard vs The Old Way
+          </h2>
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '1.75rem' }}>
+          {/* Traditional Way */}
+          <div className="glass-card scroll-slide-left delay-1" style={{ padding: '2rem', opacity: 0.75 }}>
+            <h3 style={{ color: 'var(--text-muted)', fontSize: '1.3rem', marginBottom: '1.25rem' }}>
+              Traditional Cloud Editors
+            </h3>
+            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', color: '#fca5a5' }}>
+                <IconX size={18} /> Forced mandatory cloud account login
+              </li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', color: '#fca5a5' }}>
+                <IconX size={18} /> High latency saving across distant servers
+              </li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', color: '#fca5a5' }}>
+                <IconX size={18} /> Offline documents become inaccessible
+              </li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', color: '#fca5a5' }}>
+                <IconX size={18} /> Heavy Megabyte bundle sizes & tracker scripts
+              </li>
+            </ul>
+          </div>
+
+          {/* Google Docs Lite Way */}
+          <div className="glass-card scroll-slide-right delay-2 sassy-card-border-glow" style={{ padding: '2rem', background: 'rgba(25, 34, 52, 0.9)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.25rem' }}>
+              <h3 style={{ color: '#F8FAFC', fontSize: '1.3rem', fontWeight: 800 }}>
+                Google Docs Lite
+              </h3>
+              <span className="sassy-pill" style={{ padding: '0.2rem 0.6rem', fontSize: '0.7rem' }}>RECOMMENDED</span>
+            </div>
+            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', color: '#2EC4B6' }}>
+                <IconCheck size={18} /> 100% Offline PC storage with zero cloud latency
+              </li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', color: '#2EC4B6' }}>
+                <IconCheck size={18} /> Instant Ctrl+S saving to local disk with snapshot logs
+              </li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', color: '#2EC4B6' }}>
+                <IconCheck size={18} /> Direct exports to HTML, Plain Text, Markdown & JSON
+              </li>
+              <li style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', color: '#2EC4B6' }}>
+                <IconCheck size={18} /> Real-time multi-tab sync without server bottlenecks
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      {/* 5. INTERACTIVE FAQ ACCORDION SECTION */}
+      <section id="faq" className="landing-faq page-container">
+        <div className="scroll-blur-in" style={{ textAlign: 'center', marginBottom: '3rem' }}>
+          <span className="sassy-pill">✦ GOT QUESTIONS?</span>
+          <h2 style={{ fontSize: '2.6rem', fontWeight: 800, marginTop: '0.8rem' }}>
+            Frequently Asked Questions
+          </h2>
+        </div>
+
+        <div style={{ maxWidth: '820px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          {faqs.map((faq, index) => (
+            <div
+              key={index}
+              className="glass-card scroll-slide-up sassy-card-border-glow"
+              style={{ padding: '1.25rem 1.75rem', cursor: 'pointer' }}
+              onClick={() => setOpenFaq(openFaq === index ? -1 : index)}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: openFaq === index ? '#2EC4B6' : '#F8FAFC' }}>
+                  {faq.q}
+                </h3>
+                <span style={{ fontSize: '1.2rem', color: 'var(--accent)', transition: 'transform 0.3s ease', transform: openFaq === index ? 'rotate(45deg)' : 'rotate(0deg)' }}>
+                  +
+                </span>
+              </div>
+              {openFaq === index && (
+                <p style={{ marginTop: '0.85rem', color: 'var(--text-muted)', lineHeight: 1.65, fontSize: '0.95rem' }} className="animated-fade-in">
+                  {faq.a}
+                </p>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* 6. STACK SECTION */}
       <section id="stack" className="landing-stack page-container">
         <div className="scroll-blur-in" style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
           <span className="sassy-pill">✦ HIGH-PERFORMANCE FOUNDATION</span>
