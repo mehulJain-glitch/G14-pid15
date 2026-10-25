@@ -6,7 +6,6 @@ import {
   IconShare,
   IconCheck,
   IconLock,
-  IconPalette,
   IconCompass,
   IconSave,
   IconDownload,
@@ -86,12 +85,12 @@ export const Landing = () => {
           className="landing-brand"
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           style={{ cursor: 'pointer' }}
-          title="Team Titans — Classy & Sassy Document Workspace"
+          title="Team Titans — Document Workspace"
         >
           <div className="sidebar-logo-icon">TT</div>
           <div>
             <span className="sidebar-brand-text">Team Titans</span>
-            <span className="landing-tagline-badge">CLASSY & SASSY WORKSPACE</span>
+            <span className="landing-tagline-badge">DOCUMENT WORKSPACE</span>
           </div>
         </div>
 
@@ -133,21 +132,20 @@ export const Landing = () => {
       <section id="home" className="landing-hero">
         <div className="hero-badge pro-badge">
           <span className="pulse-dot" />
-          <span>✦ ULTRA-PREMIUM CLASSY & SASSY WORKSPACE</span>
+          <span>✦ THE FASTEST WAY TO WRITE & COLLABORATE</span>
         </div>
 
         <h1 className="hero-title scroll-slide-up">
-          Write Without Limits. <br />
-          <span className="hero-subtitle">The Ultra-Modern</span> <br />
+          Write at the Speed of Thought. <br />
+          <span className="hero-subtitle">The Distraction-Free</span> <br />
           <span className="running-text-wrapper">
             <span className="running-text-animated">Google Docs Lite</span>
           </span>
         </h1>
 
         <p className="hero-description scroll-slide-up delay-1">
-          A high-fashion, lighting-fast document workspace crafted in <strong>Midnight Obsidian (#121826)</strong>, 
-          <strong> Royal Violet (#6C63FF)</strong>, and <strong>Electric Cyan (#2EC4B6)</strong>. 
-          Featuring instant <strong>PC Local Storage persistence</strong> on <kbd>Ctrl+S</kbd>, native file exports, and live multi-tab synchronization.
+          Where ideas turn into words without friction. Write, format, and collaborate in an ultra-fast document 
+          editor that auto-saves directly to your PC on <kbd>Ctrl+S</kbd> — giving you instant speed, complete offline privacy, and effortless creative flow.
         </p>
 
         <div className="hero-cta-group scroll-slide-up delay-2">
@@ -183,7 +181,7 @@ export const Landing = () => {
             </div>
             <div className="preview-title" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
               <IconFileText size={16} style={{ color: 'var(--accent)' }} />
-              <span>Team Titans — Luxury Workspace Architecture</span>
+              <span>Team Titans — Collaborative Document Engine</span>
             </div>
             <span className="badge badge-editor" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
               <span className="live-pulse-dot" />
@@ -211,25 +209,25 @@ export const Landing = () => {
             </div>
 
             <div className="preview-paper-mock">
-              <h2 style={{ color: '#0f172a', marginBottom: '0.5rem' }}>Next-Gen Collaborative Document Engine</h2>
+              <h2 style={{ color: '#0f172a', marginBottom: '0.5rem' }}>Craft Your Best Documents with Zero Friction</h2>
               <p style={{ color: '#334155', lineHeight: 1.65 }}>
-                Engineered with pure <strong>React 19</strong>, <strong>Zustand</strong>, and <strong>Hardware-Accelerated CSS3</strong>. 
-                Documents are saved directly onto your PC's local storage upon typing or pressing <kbd>Ctrl+S</kbd>, granting complete offline autonomy and privacy.
+                Experience a word processor that puts your writing first. No complex menus, no clunky load times, and zero cloud latency. 
+                Every keystroke is saved directly onto your PC with full offline resilience.
               </p>
               <div className="preview-highlight-box" style={{ background: 'rgba(108, 99, 255, 0.12)', borderLeft: '4px solid #6C63FF', color: 'var(--text-main)' }}>
-                ✨ <strong>Zero-Cloud Dependency</strong>: Instant PC LocalStorage persistence, 1-click HTML/Markdown/JSON exports, and time-machine snapshot history.
+                ✨ <strong>Total Autonomy</strong>: Instant PC LocalStorage persistence, 1-click HTML/Markdown/JSON exports, and time-machine snapshot history.
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* 2. LIVE METRICS & SASSY NUMBERS BAR */}
+      {/* 2. LIVE METRICS & KEY NUMBERS BAR */}
       <section id="metrics" className="landing-metrics page-container">
         <div className="scroll-blur-in" style={{ textAlign: 'center', marginBottom: '2.5rem' }}>
-          <span className="sassy-pill">✦ CRAFTED FOR SPEED & LUXURY</span>
+          <span className="sassy-pill">✦ BUILT FOR CREATIVE VELOCITY</span>
           <h2 style={{ fontSize: '2.4rem', fontWeight: 800, marginTop: '0.8rem' }}>
-            Metrics That Define Class
+            Performance Engineered for Writers
           </h2>
         </div>
 
@@ -268,11 +266,11 @@ export const Landing = () => {
             onMouseLeave={handle3DTiltMouseLeave}
           >
             <div className="stat-icon" style={{ background: 'rgba(108, 99, 255, 0.2)', color: '#6C63FF' }}>
-              <IconPalette size={26} />
+              <IconFileText size={26} />
             </div>
             <div>
-              <div className="stat-val" style={{ color: '#F8FAFC' }}>4-Tone</div>
-              <div className="stat-label">Luxury Sassy Palette</div>
+              <div className="stat-val" style={{ color: '#F8FAFC' }}>Ctrl+S</div>
+              <div className="stat-label">Instant Snapshot Saves</div>
             </div>
           </div>
 
@@ -286,7 +284,7 @@ export const Landing = () => {
             </div>
             <div>
               <div className="stat-val" style={{ color: '#2EC4B6' }}>60 FPS</div>
-              <div className="stat-label">Hardware-Driven Physics</div>
+              <div className="stat-label">Fluid Writing Animations</div>
             </div>
           </div>
         </div>
@@ -295,12 +293,12 @@ export const Landing = () => {
       {/* 3. FEATURES BENTO GRID SECTION */}
       <section id="features" className="landing-features page-container">
         <div className="scroll-slide-up" style={{ textAlign: 'center', marginBottom: '3.5rem' }}>
-          <span className="sassy-pill">✦ CLASSY ARCHITECTURE & CAPABILITIES</span>
+          <span className="sassy-pill">✦ POWERFUL DOCUMENT EDITING SUITE</span>
           <h2 style={{ fontSize: '2.6rem', fontWeight: 800, marginTop: '0.8rem' }}>
-            Designed with Modern Sass & Rigor
+            Everything You Need to Write & Collaborate
           </h2>
           <p style={{ color: 'var(--text-muted)', fontSize: '1.05rem', marginTop: '0.5rem', maxWidth: '720px', marginInline: 'auto' }}>
-            Every interaction is calibrated for high performance, uncompromising aesthetics, and effortless document management.
+            From rich text formatting and version snapshots to instant PC file downloads and live multi-tab syncing.
           </p>
         </div>
 
@@ -349,7 +347,7 @@ export const Landing = () => {
             <h3>Real-Time Multi-Tab Sync</h3>
             <p>Simultaneous editing across multiple windows with custom browser Storage event listeners and state synchronization.</p>
             <div style={{ marginTop: 'auto', paddingTop: '0.75rem' }}>
-              <span className="badge badge-editor">● Multi-Window Telepathy</span>
+              <span className="badge badge-editor">● Multi-Window Sync</span>
             </div>
           </div>
 
@@ -387,22 +385,19 @@ export const Landing = () => {
             </div>
           </div>
 
-          {/* Card 6: Classy Cyber Palette */}
+          {/* Card 6: Zen Focus Mode */}
           <div
             className="glass-card feature-card scroll-slide-right delay-3 sassy-card-border-glow"
             onMouseMove={handle3DTiltMouseMove}
             onMouseLeave={handle3DTiltMouseLeave}
           >
             <div className="feature-icon" style={{ background: 'rgba(46, 196, 182, 0.25)', color: '#2EC4B6' }}>
-              <IconPalette size={28} />
+              <IconFileText size={28} />
             </div>
-            <h3>Classy & Sassy Palette</h3>
-            <p>Tailored 4-tone palette featuring Midnight Obsidian (#121826), Royal Violet (#6C63FF), Snow Pearl (#F8FAFC), and Electric Cyan (#2EC4B6).</p>
-            <div style={{ display: 'flex', gap: '0.4rem', marginTop: 'auto', paddingTop: '0.75rem' }}>
-              <span style={{ width: 16, height: 16, borderRadius: '50%', background: '#6C63FF', display: 'inline-block' }} title="#6C63FF" />
-              <span style={{ width: 16, height: 16, borderRadius: '50%', background: '#121826', border: '1px solid #6C63FF', display: 'inline-block' }} title="#121826" />
-              <span style={{ width: 16, height: 16, borderRadius: '50%', background: '#F8FAFC', display: 'inline-block' }} title="#F8FAFC" />
-              <span style={{ width: 16, height: 16, borderRadius: '50%', background: '#2EC4B6', display: 'inline-block' }} title="#2EC4B6" />
+            <h3>Distraction-Free Focus Mode</h3>
+            <p>Full-screen Zen writing mode, live word count analytics, and reading time estimation that keep your focus squarely on your words.</p>
+            <div style={{ marginTop: 'auto', paddingTop: '0.75rem' }}>
+              <span className="badge badge-commenter">🧘 Zen Focus Mode</span>
             </div>
           </div>
         </div>

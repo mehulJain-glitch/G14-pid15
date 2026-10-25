@@ -3,6 +3,7 @@ import { Sidebar } from '../components/Sidebar';
 import { Navbar } from '../components/Navbar';
 import { Button } from '../components/Button';
 import { ToastContainer } from '../components/Toast';
+import { WorkspaceFooter } from '../components/WorkspaceFooter';
 import { useAppStore } from '../store/appStore';
 
 export const Settings = () => {
@@ -90,6 +91,8 @@ export const Settings = () => {
             </div>
           </div>
         </div>
+
+        <WorkspaceFooter />
       </main>
 
       <ToastContainer toasts={toasts} onDismiss={removeToast} />

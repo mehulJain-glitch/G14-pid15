@@ -5,6 +5,7 @@ import { DocumentList } from '../components/DocumentList';
 import { ShareModal } from '../components/ShareModal';
 import { ToastContainer } from '../components/Toast';
 import { TemplateFetcher } from '../components/TemplateFetcher';
+import { WorkspaceFooter } from '../components/WorkspaceFooter';
 import { IconFileText, IconUsers, IconStar, IconHardDrive } from '../components/Icons';
 import { useAppStore } from '../store/appStore';
 import { useScrollAnimation, handle3DTiltMouseMove, handle3DTiltMouseLeave } from '../hooks/useScrollAnimation';
@@ -177,6 +178,8 @@ export const Dashboard = () => {
             emptyTitle={`No ${dashboardFilter !== 'all' ? dashboardFilter : ''} documents found`}
           />
         </div>
+
+        <WorkspaceFooter />
       </main>
 
       <ShareModal

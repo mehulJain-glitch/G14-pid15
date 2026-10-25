@@ -4,6 +4,7 @@ import { Navbar } from '../components/Navbar';
 import { DocumentList } from '../components/DocumentList';
 import { ShareModal } from '../components/ShareModal';
 import { ToastContainer } from '../components/Toast';
+import { WorkspaceFooter } from '../components/WorkspaceFooter';
 import { useAppStore } from '../store/appStore';
 import { useScrollAnimation } from '../hooks/useScrollAnimation';
 
@@ -46,6 +47,8 @@ export const Shared = () => {
             emptyTitle="No shared documents found"
           />
         </div>
+
+        <WorkspaceFooter />
       </main>
 
       <ShareModal
