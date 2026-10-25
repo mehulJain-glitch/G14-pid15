@@ -1,11 +1,32 @@
-import React, { useRef, useEffect, useImperativeHandle, forwardRef } from 'react';
+import React, { useRef, useEffect, useImperativeHandle, forwardRef, useCallback } from 'react';
 
 export const DocumentEditor = forwardRef(({ content, onChange, readOnly = false, docId }, ref) => {
   const paperRef = useRef(null);
   const lastContentRef = useRef(content);
   const savedRangeRef = useRef(null);
 
-  // Expose formatting methods to parent Editor component
+  // Save current text selection inside the paper div
+  const saveCurrentSelection = useCallback(() => {
+    if (!paperRef.current) return;
+    const selection = window.getSelection();
+    if (selection && selection.rangeCount > 0) {
+      const range = selection.getRangeAt(0);
+      if (paperRef.current.contains(range.commonAncestorContainer)) {
+        savedRangeRef.current = range.cloneRange();
+      }
+    }
+  }, []);
+
+  // Handle content input changes
+  const handleInput = useCallback(() => {
+    if (paperRef.current && onChange) {
+      const html = paperRef.current.innerHTML;
+      lastContentRef.current = html;
+      onChange(html);
+    }
+  }, [onChange]);
+
+  // Expose methods to parent Editor component
   useImperativeHandle(ref, () => ({
     applyCommand: (command, value = null) => {
       if (readOnly || !paperRef.current) return;
@@ -27,10 +48,8 @@ export const DocumentEditor = forwardRef(({ content, onChange, readOnly = false,
       // 3. Execute DOM format command
       try {
         if (command === 'formatBlock') {
-          // Chrome/Edge require formatBlock to have angle brackets like <h1> or <h2>
           document.execCommand('formatBlock', false, value);
         } else if (command === 'fontSize') {
-          // execCommand fontSize accepts 1-7. Also apply direct CSS font-size if needed
           document.execCommand('fontSize', false, value);
         } else if (command === 'hiliteColor') {
           const success = document.execCommand('hiliteColor', false, value);
@@ -51,21 +70,24 @@ export const DocumentEditor = forwardRef(({ content, onChange, readOnly = false,
 
     saveSelection: () => {
       saveCurrentSelection();
-    }
-  }));
+    },
 
-  // Save current text selection inside the paper div
-  const saveCurrentSelection = () => {
-    if (!paperRef.current) return;
-    const selection = window.getSelection();
-    if (selection && selection.rangeCount > 0) {
-      const range = selection.getRangeAt(0);
-      // Ensure selection is inside our paper
-      if (paperRef.current.contains(range.commonAncestorContainer)) {
-        savedRangeRef.current = range.cloneRange();
+    getContent: () => {
+      return paperRef.current ? paperRef.current.innerHTML : '';
+    },
+
+    setContent: (newHtml) => {
+      if (paperRef.current) {
+        paperRef.current.innerHTML = newHtml || '';
+        lastContentRef.current = newHtml;
+        handleInput();
       }
+    },
+
+    focus: () => {
+      paperRef.current?.focus();
     }
-  };
+  }), [readOnly, saveCurrentSelection, handleInput]);
 
   // Set initial content on mount or document switch
   useEffect(() => {
@@ -87,19 +109,10 @@ export const DocumentEditor = forwardRef(({ content, onChange, readOnly = false,
     }
   }, [content]);
 
-  // Handle content input changes
-  const handleInput = () => {
-    if (paperRef.current && onChange) {
-      const html = paperRef.current.innerHTML;
-      lastContentRef.current = html;
-      onChange(html);
-    }
-  };
-
   return (
     <div className="editor-paper-wrapper" onClick={() => paperRef.current?.focus()}>
       <div className="paper-container">
-        {/* Top Paper Ruler Bar */}
+        {/* Top Paper Ruler Bar with animated tick indicators */}
         <div className="paper-ruler">
           <div className="ruler-ticks">
             {Array.from({ length: 12 }).map((_, i) => (
@@ -108,10 +121,10 @@ export const DocumentEditor = forwardRef(({ content, onChange, readOnly = false,
           </div>
         </div>
 
-        {/* Paper Surface */}
+        {/* Paper Surface with smooth glow effect */}
         <div
           ref={paperRef}
-          className="document-paper"
+          className="document-paper animated-paper"
           contentEditable={!readOnly}
           suppressContentEditableWarning={true}
           onInput={handleInput}

@@ -1,6 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { IconArrowLeft, IconShare, IconStar } from '../components/Icons';
+import {
+  IconArrowLeft,
+  IconShare,
+  IconStar,
+  IconSave,
+  IconDownload,
+  IconCheck,
+  IconHardDrive
+} from '../components/Icons';
 import { Button } from '../components/Button';
 import { EditorToolbar } from '../components/EditorToolbar';
 import { DocumentEditor } from '../components/DocumentEditor';
@@ -11,6 +19,7 @@ import { VersionHistory } from '../components/VersionHistory';
 import { ToastContainer } from '../components/Toast';
 import { useAppStore } from '../store/appStore';
 import { documentService } from '../services/documentService';
+import { storageService } from '../services/storage';
 
 export const Editor = () => {
   const { id } = useParams();
@@ -26,14 +35,41 @@ export const Editor = () => {
 
   const [document, setDocument] = useState(null);
   const [title, setTitle] = useState('');
-  const [saveStatus, setSaveStatus] = useState('Saved');
+  const [saveStatus, setSaveStatus] = useState('Saved in PC Local Storage');
   const [activeTab, setActiveTab] = useState('comments');
   const [isShareOpen, setIsShareOpen] = useState(false);
+  const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
+  const [showSaveSuccessAnim, setShowSaveSuccessAnim] = useState(false);
   const [wordCount, setWordCount] = useState(0);
   const [charCount, setCharCount] = useState(0);
 
   const editorRef = useRef(null);
   const saveTimeoutRef = useRef(null);
+  const exportDropdownRef = useRef(null);
+
+  // Close export dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (exportDropdownRef.current && !exportDropdownRef.current.contains(e.target)) {
+        setIsExportMenuOpen(false);
+      }
+    };
+    window.addEventListener('mousedown', handleClickOutside);
+    return () => window.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // Calculate word and character count
+  const calculateCounts = useCallback((htmlContent) => {
+    if (!htmlContent) {
+      setWordCount(0);
+      setCharCount(0);
+      return;
+    }
+    const plainText = htmlContent.replace(/<[^>]*>?/gm, '').trim();
+    setCharCount(plainText.length);
+    const words = plainText ? plainText.split(/\s+/).filter(Boolean) : [];
+    setWordCount(words.length);
+  }, []);
 
   // Sync document from store whenever id or store changes (supports Multi-Tab live sync!)
   useEffect(() => {
@@ -43,7 +79,7 @@ export const Editor = () => {
       setTitle(doc.title);
       calculateCounts(doc.content);
     }
-  }, [id, documents]);
+  }, [id, documents, calculateCounts]);
 
   // Determine active user role & permission
   const getUserRole = () => {
@@ -57,23 +93,42 @@ export const Editor = () => {
   const canEdit = userRole === 'Editor';
   const canComment = userRole === 'Editor' || userRole === 'Commenter';
 
-  // Calculate word and character count
-  const calculateCounts = (htmlContent) => {
-    if (!htmlContent) {
-      setWordCount(0);
-      setCharCount(0);
-      return;
-    }
-    const plainText = htmlContent.replace(/<[^>]*>?/gm, '').trim();
-    setCharCount(plainText.length);
-    const words = plainText ? plainText.split(/\s+/).filter(Boolean) : [];
-    setWordCount(words.length);
-  };
+  // Instant save to PC LocalStorage + Snapshot in Version History
+  const saveDocumentNow = useCallback((trigger = 'manual') => {
+    if (!canEdit || !id) return;
 
-  // Auto-save debounced content update
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    const currentContent = editorRef.current?.getContent() ?? (document?.content || '');
+    calculateCounts(currentContent);
+
+    // Save directly to localStorage
+    updateDocument(id, { content: currentContent, title });
+
+    // Record snapshot
+    const timestamp = new Date().toLocaleTimeString();
+    const snapshotName = trigger === 'shortcut'
+      ? `Ctrl+S Snapshot (${timestamp})`
+      : `PC Storage Snapshot (${timestamp})`;
+
+    documentService.createSnapshot(id, snapshotName);
+    useAppStore.setState({ documents: documentService.getDocuments() });
+
+    setSaveStatus('Saved in PC Local Storage');
+    setShowSaveSuccessAnim(true);
+    setTimeout(() => setShowSaveSuccessAnim(false), 2400);
+
+    if (trigger === 'shortcut') {
+      addToast('Saved in PC Local Storage (Ctrl+S)', 'success');
+    }
+  }, [canEdit, id, title, document, updateDocument, calculateCounts, addToast]);
+
+  // Auto-save debounced content update to PC Local Storage
   const handleContentChange = useCallback((newContent) => {
     if (!canEdit) return;
-    setSaveStatus('Saving...');
+    setSaveStatus('Saving to PC Storage...');
     calculateCounts(newContent);
 
     if (saveTimeoutRef.current) {
@@ -81,38 +136,58 @@ export const Editor = () => {
     }
 
     saveTimeoutRef.current = setTimeout(() => {
-      if (document) {
-        updateDocument(document.id, { content: newContent });
-        setSaveStatus('Saved');
+      if (id) {
+        updateDocument(id, { content: newContent });
+        setSaveStatus('Saved in PC Local Storage');
       }
-    }, 1000);
-  }, [document, updateDocument, canEdit]);
+    }, 800);
+  }, [id, updateDocument, canEdit, calculateCounts]);
 
   const handleTitleChange = (e) => {
     if (!canEdit) return;
     const newTitle = e.target.value;
     setTitle(newTitle);
-    setSaveStatus('Saving...');
+    setSaveStatus('Saving to PC Storage...');
     updateDocument(id, { title: newTitle });
-    setTimeout(() => setSaveStatus('Saved'), 600);
+    setTimeout(() => setSaveStatus('Saved in PC Local Storage'), 500);
   };
 
-  // Keyboard shortcut Ctrl+S / Cmd+S for manual save snapshot
+  // Keyboard shortcut Ctrl+S / Cmd+S for saving in PC Local Storage
   useEffect(() => {
     const handleKeyDown = (e) => {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
         e.preventDefault();
-        if (canEdit && document) {
-          documentService.createSnapshot(document.id, `Manual Save (${new Date().toLocaleTimeString()})`);
-          useAppStore.setState({ documents: documentService.getDocuments() });
-          setSaveStatus('Saved');
-          addToast('Document snapshot saved (Ctrl+S)', 'success');
-        }
+        saveDocumentNow('shortcut');
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [canEdit, document, addToast]);
+  }, [saveDocumentNow]);
+
+  // Export / Save file to user's PC physical disk
+  const handleSaveToPCFile = async (format) => {
+    setIsExportMenuOpen(false);
+    const currentContent = editorRef.current?.getContent() ?? (document?.content || '');
+    const activeDoc = {
+      ...(document || {}),
+      title: title || document?.title || 'Untitled Document',
+      content: currentContent,
+      updatedAt: new Date().toISOString()
+    };
+
+    // First ensure latest version is saved in PC LocalStorage
+    saveDocumentNow('manual');
+
+    try {
+      const res = await storageService.exportDocumentAsFile(activeDoc, format);
+      if (res && res.success) {
+        addToast(`Saved to PC: ${res.filename}`, 'success');
+      }
+    } catch (err) {
+      console.error('Save to PC error:', err);
+      addToast('Failed to save file to PC', 'danger');
+    }
+  };
 
   if (!document) {
     return (
@@ -130,6 +205,15 @@ export const Editor = () => {
 
   return (
     <div className="editor-container">
+      {/* FLOATING POPUP ANIMATION ON SAVE */}
+      {showSaveSuccessAnim && (
+        <div className="save-floating-banner animated-slide-down">
+          <IconCheck size={18} style={{ color: 'var(--success)' }} />
+          <span>Saved in PC Local Storage</span>
+          <span className="save-badge-pill">Ctrl+S</span>
+        </div>
+      )}
+
       {/* TOP HEADER */}
       <header className="editor-header">
         <div className="editor-header-left">
@@ -143,6 +227,7 @@ export const Editor = () => {
             value={title}
             onChange={handleTitleChange}
             disabled={!canEdit}
+            placeholder="Document Title"
           />
 
           <Button
@@ -153,8 +238,13 @@ export const Editor = () => {
             <IconStar size={18} filled={document.starred} />
           </Button>
 
-          <div className="save-status-indicator">
-            <span className={`status-dot ${saveStatus === 'Saving...' ? 'saving' : ''}`} />
+          {/* Interactive Save Status Badge */}
+          <div
+            className={`save-status-indicator interactive-save-pill ${saveStatus.includes('Saving') ? 'is-saving' : 'is-saved'}`}
+            onClick={() => saveDocumentNow('manual')}
+            title="Click to save immediately to PC Local Storage (Ctrl+S)"
+          >
+            <span className={`status-dot ${saveStatus.includes('Saving') ? 'saving' : ''}`} />
             <span>{saveStatus}</span>
           </div>
 
@@ -165,13 +255,102 @@ export const Editor = () => {
           )}
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <Collaborators permissions={document.permissions} />
+
+          {/* SAVE TO PC BUTTON & DROPDOWN */}
+          <div className="export-menu-container" ref={exportDropdownRef} style={{ position: 'relative' }}>
+            <Button
+              variant="secondary"
+              icon={<IconSave size={16} />}
+              onClick={() => setIsExportMenuOpen((prev) => !prev)}
+              className="save-pc-btn animated-hover-pulse"
+              title="Save to PC Local Storage or Download file"
+            >
+              <span>Save to PC</span>
+              <span style={{ fontSize: '0.7rem', opacity: 0.7, marginLeft: '0.2rem' }}>▼</span>
+            </Button>
+
+            {isExportMenuOpen && (
+              <div className="export-dropdown-menu animated-pop-in">
+                <div className="dropdown-header">
+                  <IconHardDrive size={16} style={{ color: 'var(--accent)' }} />
+                  <span>PC Storage & Export</span>
+                </div>
+
+                <button
+                  type="button"
+                  className="dropdown-item highlighted-item"
+                  onClick={() => {
+                    saveDocumentNow('manual');
+                    setIsExportMenuOpen(false);
+                  }}
+                >
+                  <IconSave size={16} style={{ color: 'var(--success)' }} />
+                  <div>
+                    <strong>Save to PC Local Storage</strong>
+                    <div className="dropdown-subtext">Instant browser disk persistence (Ctrl+S)</div>
+                  </div>
+                </button>
+
+                <div className="dropdown-divider" />
+
+                <button
+                  type="button"
+                  className="dropdown-item"
+                  onClick={() => handleSaveToPCFile('html')}
+                >
+                  <IconDownload size={16} />
+                  <div>
+                    <strong>Download as HTML (.html)</strong>
+                    <div className="dropdown-subtext">Formatted document for any browser or Word</div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  className="dropdown-item"
+                  onClick={() => handleSaveToPCFile('txt')}
+                >
+                  <IconDownload size={16} />
+                  <div>
+                    <strong>Download as Plain Text (.txt)</strong>
+                    <div className="dropdown-subtext">Clean text without tags</div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  className="dropdown-item"
+                  onClick={() => handleSaveToPCFile('md')}
+                >
+                  <IconDownload size={16} />
+                  <div>
+                    <strong>Download as Markdown (.md)</strong>
+                    <div className="dropdown-subtext">Formatted markdown file</div>
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  className="dropdown-item"
+                  onClick={() => handleSaveToPCFile('json')}
+                >
+                  <IconDownload size={16} />
+                  <div>
+                    <strong>Backup as JSON (.json)</strong>
+                    <div className="dropdown-subtext">Includes versions, comments, and permissions</div>
+                  </div>
+                </button>
+              </div>
+            )}
+          </div>
 
           <Button
             variant="primary"
             icon={<IconShare size={16} />}
             onClick={() => setIsShareOpen(true)}
+            className="share-btn animated-hover-glow"
           >
             Share
           </Button>
@@ -196,16 +375,16 @@ export const Editor = () => {
         />
 
         {/* RIGHT SIDEBAR (Comments & Version History) */}
-        <aside className="editor-sidebar">
+        <aside className="editor-sidebar animated-sidebar">
           <div className="sidebar-tabs">
             <button
-              className={`tab-btn ${activeTab === 'comments' ? 'active' : ''}`}
+              className={`tab-btn animated-tab ${activeTab === 'comments' ? 'active' : ''}`}
               onClick={() => setActiveTab('comments')}
             >
               Comments
             </button>
             <button
-              className={`tab-btn ${activeTab === 'history' ? 'active' : ''}`}
+              className={`tab-btn animated-tab ${activeTab === 'history' ? 'active' : ''}`}
               onClick={() => setActiveTab('history')}
             >
               Version History
@@ -224,16 +403,24 @@ export const Editor = () => {
 
       {/* BOTTOM STATUS BAR */}
       <footer className="editor-statusbar">
-        <div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem' }}>
           <span>Words: {wordCount}</span>
-          <span style={{ margin: '0 0.5rem' }}>|</span>
+          <span style={{ opacity: 0.4 }}>|</span>
           <span>Characters: {charCount}</span>
-          <span style={{ margin: '0 0.5rem' }}>|</span>
+          <span style={{ opacity: 0.4 }}>|</span>
           <span>Mode: {userRole}</span>
+          <span style={{ opacity: 0.4 }}>|</span>
+          <span className="shortcut-hint" onClick={() => saveDocumentNow('manual')} title="Press Ctrl+S to save">
+            Shortcut: <kbd>Ctrl</kbd> + <kbd>S</kbd>
+          </span>
         </div>
-        <div>
-          <span style={{ color: 'var(--success)' }}>● Live Synced (Browser Storage)</span>
-          <span style={{ marginLeft: '1rem' }}>Status: {saveStatus}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <span style={{ color: 'var(--success)', display: 'inline-flex', alignItems: 'center', gap: '0.35rem' }}>
+            <span className="live-pulse-dot" />
+            PC Local Storage Active
+          </span>
+          <span style={{ opacity: 0.4 }}>|</span>
+          <span style={{ color: 'var(--text-dim)' }}>{saveStatus}</span>
         </div>
       </footer>
 
