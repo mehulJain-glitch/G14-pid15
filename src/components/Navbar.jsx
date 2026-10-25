@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { IconSearch, IconUser } from './Icons';
+import { IconSearch } from './Icons';
 import { useAppStore } from '../store/appStore';
 
 export const Navbar = () => {

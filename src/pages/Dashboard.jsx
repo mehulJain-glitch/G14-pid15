@@ -5,7 +5,7 @@ import { DocumentList } from '../components/DocumentList';
 import { ShareModal } from '../components/ShareModal';
 import { ToastContainer } from '../components/Toast';
 import { TemplateFetcher } from '../components/TemplateFetcher';
-import { IconFileText, IconUsers, IconStar, IconHistory } from '../components/Icons';
+import { IconFileText, IconUsers, IconStar, IconHardDrive } from '../components/Icons';
 import { useAppStore } from '../store/appStore';
 import { useScrollAnimation, handle3DTiltMouseMove, handle3DTiltMouseLeave } from '../hooks/useScrollAnimation';
 
@@ -18,7 +18,7 @@ export const Dashboard = () => {
   const toasts = useAppStore((state) => state.toasts);
   const removeToast = useAppStore((state) => state.removeToast);
 
-  // Activate scroll-triggered 3D sliding & rolling animations
+  // Activate scroll-triggered 3D sliding, rolling & cascade entrance animations
   useScrollAnimation();
 
   // Compute greeting based on local time
@@ -44,11 +44,12 @@ export const Dashboard = () => {
 
         <div className="page-container">
           <div className="scroll-slide-up" style={{ marginBottom: '2rem' }}>
-            <h1 style={{ fontSize: '2.2rem', fontWeight: 800 }}>
-              {greeting}, {user?.name || 'Vasudev'} 👋
+            <span className="sassy-pill" style={{ marginBottom: '0.65rem' }}>✦ CLASSY DASHBOARD</span>
+            <h1 style={{ fontSize: '2.4rem', fontWeight: 800, marginTop: '0.4rem' }}>
+              {greeting}, <span className="sassy-gradient-text">{user?.name || 'Vasudev'}</span> 👋
             </h1>
-            <p style={{ color: 'var(--text-muted)', fontSize: '1rem', marginTop: '0.25rem' }}>
-              Here is an overview of your recent documents and collaboration activity.
+            <p style={{ color: 'var(--text-muted)', fontSize: '1rem', marginTop: '0.35rem' }}>
+              Real-time overview of your documents, instant PC local storage snapshots, and team collaboration.
             </p>
           </div>
 
@@ -56,13 +57,13 @@ export const Dashboard = () => {
           <TemplateFetcher />
 
           {/* Statistics Grid with 3D Mouse Tilt & Scroll Animations */}
-          <div className="stats-grid">
+          <div className="stats-grid" style={{ marginBottom: '2.5rem' }}>
             <div
-              className="glass-card stat-card scroll-slide-left delay-1"
+              className="glass-card stat-card scroll-slide-left delay-1 sassy-card-border-glow"
               onMouseMove={handle3DTiltMouseMove}
               onMouseLeave={handle3DTiltMouseLeave}
             >
-              <div className="stat-icon">
+              <div className="stat-icon" style={{ background: 'rgba(108, 99, 255, 0.2)', color: '#6C63FF' }}>
                 <IconFileText size={26} />
               </div>
               <div>
@@ -72,11 +73,11 @@ export const Dashboard = () => {
             </div>
 
             <div
-              className="glass-card stat-card scroll-slide-up delay-2"
+              className="glass-card stat-card scroll-slide-up delay-2 sassy-card-border-glow"
               onMouseMove={handle3DTiltMouseMove}
               onMouseLeave={handle3DTiltMouseLeave}
             >
-              <div className="stat-icon" style={{ background: 'rgba(6, 182, 212, 0.2)', color: 'var(--accent)' }}>
+              <div className="stat-icon" style={{ background: 'rgba(46, 196, 182, 0.2)', color: '#2EC4B6' }}>
                 <IconUsers size={26} />
               </div>
               <div>
@@ -86,11 +87,11 @@ export const Dashboard = () => {
             </div>
 
             <div
-              className="glass-card stat-card scroll-slide-up delay-3"
+              className="glass-card stat-card scroll-slide-up delay-3 sassy-card-border-glow"
               onMouseMove={handle3DTiltMouseMove}
               onMouseLeave={handle3DTiltMouseLeave}
             >
-              <div className="stat-icon" style={{ background: 'rgba(245, 158, 11, 0.2)', color: 'var(--warning)' }}>
+              <div className="stat-icon" style={{ background: 'rgba(251, 191, 36, 0.2)', color: 'var(--warning)' }}>
                 <IconStar size={26} />
               </div>
               <div>
@@ -100,23 +101,26 @@ export const Dashboard = () => {
             </div>
 
             <div
-              className="glass-card stat-card scroll-slide-right delay-4"
+              className="glass-card stat-card scroll-slide-right delay-4 sassy-card-border-glow"
               onMouseMove={handle3DTiltMouseMove}
               onMouseLeave={handle3DTiltMouseLeave}
             >
-              <div className="stat-icon" style={{ background: 'rgba(16, 185, 129, 0.2)', color: 'var(--success)' }}>
-                <IconHistory size={26} />
+              <div className="stat-icon" style={{ background: 'rgba(46, 196, 182, 0.2)', color: '#2EC4B6' }}>
+                <IconHardDrive size={26} />
               </div>
               <div>
-                <div className="stat-val">Active</div>
-                <div className="stat-label">Recent Sync Status</div>
+                <div className="stat-val" style={{ color: '#2EC4B6' }}>Online</div>
+                <div className="stat-label">PC Local Storage Synced</div>
               </div>
             </div>
           </div>
 
           {/* Recent Documents Section */}
           <div className="scroll-slide-up" style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <h2 style={{ fontSize: '1.4rem', fontWeight: 700 }}>Recent Documents</h2>
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 800 }}>Recent Documents</h2>
+            <span style={{ fontSize: '0.85rem', color: 'var(--accent)', fontWeight: 600 }}>
+              ● {filteredDocuments.length} Documents in PC Storage
+            </span>
           </div>
 
           <DocumentList
